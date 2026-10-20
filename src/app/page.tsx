@@ -1,8 +1,14 @@
 import Image from "next/image";
 import Link from "next/link";
-import { products } from "@/data/products";
+import { connection } from "next/server";
+import { getSiteData } from "@/lib/site-data";
 
-export default function Home() {
+export default async function Home() {
+  await connection();
+  const data = await getSiteData();
+  const heroImage = data.products[0]?.images[0] || "/products/cactus-5.jpg";
+  const aboutImage = data.products[0]?.images[1] || data.products[0]?.images[0] || "/products/cactus-2.jpg";
+
   return (
     <div>
       {/* Hero */}
@@ -12,11 +18,10 @@ export default function Home() {
             Hecho a mano · España
           </p>
           <h1 className="font-display text-4xl sm:text-5xl leading-tight mb-6">
-            Arte textil para momentos que importan
+            {data.heroTitle}
           </h1>
           <p className="font-sans text-[var(--ink-soft)] text-lg mb-8 max-w-md">
-            Retratos de mascotas, bordados y piezas de fieltro de aguja,
-            creados uno a uno, pensando en ti y en quienes quieres.
+            {data.heroSubtitle}
           </p>
           <div className="flex gap-4 font-sans">
             <Link href="/tienda" className="btn-primary">
@@ -29,11 +34,12 @@ export default function Home() {
         </div>
         <div className="relative aspect-square rounded-2xl overflow-hidden card">
           <Image
-            src="/products/cactus-5.jpg"
-            alt="Bordado de cactus hecho a mano, enmarcado"
+            src={heroImage}
+            alt={data.products[0]?.name || "Pieza hecha a mano"}
             fill
             className="object-cover"
             priority
+            unoptimized={heroImage.startsWith("http")}
           />
         </div>
       </section>
@@ -46,7 +52,7 @@ export default function Home() {
           mundo.
         </p>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {products.map((p) => (
+          {data.products.map((p) => (
             <Link
               key={p.slug}
               href={`/tienda/${p.slug}`}
@@ -58,6 +64,7 @@ export default function Home() {
                   alt={p.name}
                   fill
                   className="object-cover group-hover:scale-105 transition-transform duration-300"
+                  unoptimized={p.images[0].startsWith("http")}
                 />
               </div>
               <h3 className="font-display text-lg">{p.name}</h3>
@@ -76,23 +83,20 @@ export default function Home() {
       >
         <div className="relative aspect-[4/5] rounded-2xl overflow-hidden card order-2 md:order-1">
           <Image
-            src="/products/cactus-2.jpg"
+            src={aboutImage}
             alt="Pieza de fieltro de aguja en proceso"
             fill
             className="object-cover"
+            unoptimized={aboutImage.startsWith("http")}
           />
         </div>
         <div className="order-1 md:order-2">
-          <h2 className="font-display text-3xl mb-5">Un poco sobre mí</h2>
+          <h2 className="font-display text-3xl mb-5">{data.aboutTitle}</h2>
           <p className="font-sans text-[var(--ink-soft)] mb-4 leading-relaxed">
-            Cada pieza nace del fieltro de aguja y el bordado, dos técnicas
-            que me permiten crear con las manos algo único para cada
-            persona que me escribe.
+            {data.aboutText1}
           </p>
           <p className="font-sans text-[var(--ink-soft)] leading-relaxed">
-            Me encanta transformar una foto, una historia o un recuerdo en
-            una obra textil que se pueda guardar para siempre. Trabajo
-            despacio, con intención, cuidando cada detalle.
+            {data.aboutText2}
           </p>
         </div>
       </section>
