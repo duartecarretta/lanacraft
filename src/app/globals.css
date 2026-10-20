@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+:root {
+    --bg: #faf6ef;
+    --bg-card: #f3ece2;
+    --ink: #3f3426;
+  --ink-soft: #6b5d47;
+  --accent: #a9694a;
+      --accent-soft: #c9a876;
+      --border: #e3d8c4;
+    }
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    background: var(--bg);
+  color: var(--ink);
+  font-family: ui-serif, Georgia, "Times New Roman", serif;
+}
+
+.font-display {
+    font-family: ui-serif, Georgia, "Times New Roman", serif;
+}
+
+.font-sans {
+    font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+}
+
+.btn-primary {
+    background: var(--accent);
+  color: #fff;
+    padding: 0.75rem 1.75rem;
+  border-radius: 999px;
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  display: inline-block;
+}
+.btn-primary:hover {
+    opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.btn-outline {
+    border: 1px solid var(--accent);
+  color: var(--accent);
+  padding: 0.7rem 1.7rem;
+  border-radius: 999px;
+  font-size: 0.95rem;
+  transition: background 0.2s ease;
+  display: inline-block;
+}
+.btn-outline:hover {
+    background: var(--bg-card);
+}
+
+.card {
+    background: var(--bg-card);
+  border: 1px solid var(--border);
+}
