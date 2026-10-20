@@ -5,6 +5,10 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import type { SiteData } from "@/lib/site-data";
 import type { Product, Variant } from "@/data/products";
+import { LANGUAGE_NAMES, LOCALES, emptyLocalized, localize, type Locale, type Localized } from "@/lib/i18n";
+
+type LocalizedSiteField = "tagline" | "heroTitle" | "heroSubtitle" | "aboutTitle" | "aboutText1" | "aboutText2";
+type LocalizedProductField = "name" | "tagline" | "description";
 
 function slugify(text: string): string {
   return text
@@ -19,12 +23,12 @@ function slugify(text: string): string {
 function emptyProduct(): Product {
   return {
     slug: `producto-${Date.now()}`,
-    name: "Nuevo producto",
-    tagline: "",
-    description: "",
+    name: { es: "Nuevo producto", en: "New product", pt: "Novo produto" },
+    tagline: emptyLocalized(),
+    description: emptyLocalized(),
     basePriceEUR: 0,
     images: ["/products/placeholder-pattern.svg"],
-    variants: [{ id: "unico", label: "Único", priceEUR: 0 }],
+    variants: [{ id: "unico", label: { es: "Único", en: "Single option", pt: "Único" }, priceEUR: 0 }],
     requiresPhoto: false,
     madeToOrder: true,
   };
@@ -35,15 +39,34 @@ export default function AdminEditor({ initialData }: { initialData: SiteData }) 
   const [data, setData] = useState<SiteData>(initialData);
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<{ ok: boolean; message: string } | null>(null);
+  const [editLang, setEditLang] = useState<Locale>("es");
 
-  function updateField<K extends keyof SiteData>(key: K, value: SiteData[K]) {
+  function updateField<K extends "siteName" | "contactEmail">(key: K, value: SiteData[K]) {
     setData((d) => ({ ...d, [key]: value }));
+  }
+
+  function updateLocalizedField(key: LocalizedSiteField, lang: Locale, value: string) {
+    setData((d) => ({ ...d, [key]: { ...d[key], [lang]: value } }));
   }
 
   function updateProduct(index: number, patch: Partial<Product>) {
     setData((d) => ({
       ...d,
       products: d.products.map((p, i) => (i === index ? { ...p, ...patch } : p)),
+    }));
+  }
+
+  function updateProductLocalized(
+    index: number,
+    key: LocalizedProductField,
+    lang: Locale,
+    value: string
+  ) {
+    setData((d) => ({
+      ...d,
+      products: d.products.map((p, i) =>
+        i === index ? { ...p, [key]: { ...p[key], [lang]: value } } : p
+      ),
     }));
   }
 
@@ -60,6 +83,21 @@ export default function AdminEditor({ initialData }: { initialData: SiteData }) 
     }));
   }
 
+  function updateVariantLabel(productIndex: number, variantIndex: number, lang: Locale, value: string) {
+    setData((d) => ({
+      ...d,
+      products: d.products.map((p, i) => {
+        if (i !== productIndex) return p;
+        return {
+          ...p,
+          variants: p.variants.map((v, vi) =>
+            vi === variantIndex ? { ...v, label: { ...v.label, [lang]: value } } : v
+          ),
+        };
+      }),
+    }));
+  }
+
   function addVariant(productIndex: number) {
     setData((d) => ({
       ...d,
@@ -69,7 +107,11 @@ export default function AdminEditor({ initialData }: { initialData: SiteData }) 
               ...p,
               variants: [
                 ...p.variants,
-                { id: `opcion-${p.variants.length + 1}-${Date.now()}`, label: "Nueva opción", priceEUR: 0 },
+                {
+                  id: `opcion-${p.variants.length + 1}-${Date.now()}`,
+                  label: { es: "Nueva opción", en: "New option", pt: "Nova opção" },
+                  priceEUR: 0,
+                },
               ],
             }
           : p
@@ -122,7 +164,9 @@ export default function AdminEditor({ initialData }: { initialData: SiteData }) 
       ...data,
       products: data.products.map((p) => ({
         ...p,
-        slug: p.slug.startsWith("producto-") ? slugify(p.name) || p.slug : p.slug,
+        slug: p.slug.startsWith("producto-")
+          ? slugify(p.name.es || p.name.en || p.name.pt) || p.slug
+          : p.slug,
       })),
     };
     try {
@@ -176,29 +220,66 @@ export default function AdminEditor({ initialData }: { initialData: SiteData }) 
         </div>
       )}
 
+      <div className="sticky top-0 z-10 bg-[var(--bg)] -mx-6 px-6 py-3 mb-6 border-b border-[var(--border)] flex items-center gap-3">
+        <span className="text-sm text-[var(--ink-soft)]">Editando textos en:</span>
+        <div className="flex gap-2">
+          {LOCALES.map((l) => (
+            <button
+              key={l}
+              onClick={() => setEditLang(l)}
+              className={`px-3 py-1 rounded-full text-sm border transition-colors ${
+                editLang === l
+                  ? "bg-[var(--accent)] text-white border-[var(--accent)]"
+                  : "border-[var(--border)] text-[var(--ink-soft)]"
+              }`}
+            >
+              {LANGUAGE_NAMES[l]}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <section className="card rounded-xl p-6 mb-8">
         <h2 className="font-display text-xl mb-4">Datos generales</h2>
         <div className="space-y-4">
           <Field label="Nombre del sitio" value={data.siteName} onChange={(v) => updateField("siteName", v)} />
-          <Field label="Eslogan (footer)" value={data.tagline} onChange={(v) => updateField("tagline", v)} />
-          <Field label="Título principal (portada)" value={data.heroTitle} onChange={(v) => updateField("heroTitle", v)} />
-          <Field
+          <LocalizedField
+            label="Eslogan (footer)"
+            value={data.tagline}
+            lang={editLang}
+            onChange={(lang, v) => updateLocalizedField("tagline", lang, v)}
+          />
+          <LocalizedField
+            label="Título principal (portada)"
+            value={data.heroTitle}
+            lang={editLang}
+            onChange={(lang, v) => updateLocalizedField("heroTitle", lang, v)}
+          />
+          <LocalizedField
             label="Subtítulo principal (portada)"
             value={data.heroSubtitle}
-            onChange={(v) => updateField("heroSubtitle", v)}
+            lang={editLang}
+            onChange={(lang, v) => updateLocalizedField("heroSubtitle", lang, v)}
             textarea
           />
-          <Field label="Título — Sobre mí" value={data.aboutTitle} onChange={(v) => updateField("aboutTitle", v)} />
-          <Field
+          <LocalizedField
+            label="Título — Sobre mí"
+            value={data.aboutTitle}
+            lang={editLang}
+            onChange={(lang, v) => updateLocalizedField("aboutTitle", lang, v)}
+          />
+          <LocalizedField
             label="Texto — Sobre mí (párrafo 1)"
             value={data.aboutText1}
-            onChange={(v) => updateField("aboutText1", v)}
+            lang={editLang}
+            onChange={(lang, v) => updateLocalizedField("aboutText1", lang, v)}
             textarea
           />
-          <Field
+          <LocalizedField
             label="Texto — Sobre mí (párrafo 2)"
             value={data.aboutText2}
-            onChange={(v) => updateField("aboutText2", v)}
+            lang={editLang}
+            onChange={(lang, v) => updateLocalizedField("aboutText2", lang, v)}
             textarea
           />
           <Field label="Email de contacto" value={data.contactEmail} onChange={(v) => updateField("contactEmail", v)} />
@@ -219,7 +300,13 @@ export default function AdminEditor({ initialData }: { initialData: SiteData }) 
               <div className="flex gap-6 flex-col sm:flex-row">
                 <div className="sm:w-40 shrink-0">
                   <div className="relative aspect-square rounded-lg overflow-hidden bg-[var(--bg-card)] mb-2">
-                    <Image src={product.images[0]} alt={product.name} fill className="object-cover" unoptimized />
+                    <Image
+                      src={product.images[0]}
+                      alt={localize(product.name, "es")}
+                      fill
+                      className="object-cover"
+                      unoptimized
+                    />
                   </div>
                   <label className="block text-xs text-[var(--ink-soft)] mb-1">Cambiar imagen</label>
                   <input
@@ -234,12 +321,23 @@ export default function AdminEditor({ initialData }: { initialData: SiteData }) 
                 </div>
 
                 <div className="flex-1 space-y-3">
-                  <Field label="Nombre" value={product.name} onChange={(v) => updateProduct(index, { name: v })} />
-                  <Field label="Subtítulo" value={product.tagline} onChange={(v) => updateProduct(index, { tagline: v })} />
-                  <Field
+                  <LocalizedField
+                    label="Nombre"
+                    value={product.name}
+                    lang={editLang}
+                    onChange={(lang, v) => updateProductLocalized(index, "name", lang, v)}
+                  />
+                  <LocalizedField
+                    label="Subtítulo"
+                    value={product.tagline}
+                    lang={editLang}
+                    onChange={(lang, v) => updateProductLocalized(index, "tagline", lang, v)}
+                  />
+                  <LocalizedField
                     label="Descripción"
                     value={product.description}
-                    onChange={(v) => updateProduct(index, { description: v })}
+                    lang={editLang}
+                    onChange={(lang, v) => updateProductLocalized(index, "description", lang, v)}
                     textarea
                   />
                   <Field
@@ -260,10 +358,10 @@ export default function AdminEditor({ initialData }: { initialData: SiteData }) 
                       {product.variants.map((variant, vi) => (
                         <div key={variant.id} className="flex gap-2 items-center">
                           <input
-                            value={variant.label}
-                            onChange={(e) => updateVariant(index, vi, { label: e.target.value })}
+                            value={variant.label[editLang]}
+                            onChange={(e) => updateVariantLabel(index, vi, editLang, e.target.value)}
                             className="flex-1 border border-[var(--border)] rounded-lg px-3 py-2 bg-white text-sm"
-                            placeholder="Nombre de la opción"
+                            placeholder={`Nombre de la opción (${LANGUAGE_NAMES[editLang]})`}
                           />
                           <input
                             type="number"
@@ -340,6 +438,42 @@ function Field({
           type={type}
           value={value}
           onChange={(e) => onChange(e.target.value)}
+          className="w-full border border-[var(--border)] rounded-lg px-3 py-2 bg-white text-sm"
+        />
+      )}
+    </div>
+  );
+}
+
+function LocalizedField({
+  label,
+  value,
+  lang,
+  onChange,
+  textarea,
+}: {
+  label: string;
+  value: Localized;
+  lang: Locale;
+  onChange: (lang: Locale, v: string) => void;
+  textarea?: boolean;
+}) {
+  return (
+    <div>
+      <label className="block text-xs text-[var(--ink-soft)] mb-1">
+        {label} <span className="opacity-60">({LANGUAGE_NAMES[lang]})</span>
+      </label>
+      {textarea ? (
+        <textarea
+          value={value[lang]}
+          onChange={(e) => onChange(lang, e.target.value)}
+          rows={3}
+          className="w-full border border-[var(--border)] rounded-lg px-3 py-2 bg-white text-sm"
+        />
+      ) : (
+        <input
+          value={value[lang]}
+          onChange={(e) => onChange(lang, e.target.value)}
           className="w-full border border-[var(--border)] rounded-lg px-3 py-2 bg-white text-sm"
         />
       )}
