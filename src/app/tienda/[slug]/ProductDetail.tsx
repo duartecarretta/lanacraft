@@ -5,8 +5,15 @@ import Link from "next/link";
 import { useState } from "react";
 import type { Product } from "@/data/products";
 import { useCart } from "@/lib/cart-context";
+import { dictionaries, localize, type Locale } from "@/lib/i18n";
 
-export default function ProductDetail({ product }: { product: Product }) {
+export default function ProductDetail({
+  product,
+  locale,
+}: {
+  product: Product;
+  locale: Locale;
+}) {
   const [variantId, setVariantId] = useState(product.variants[0].id);
   const [mainImage, setMainImage] = useState(product.images[0]);
   const [qty, setQty] = useState(1);
@@ -14,16 +21,19 @@ export default function ProductDetail({ product }: { product: Product }) {
   const [notes, setNotes] = useState("");
   const [added, setAdded] = useState(false);
   const { addItem } = useCart();
+  const t = dictionaries[locale].product;
 
   const variant = product.variants.find((v) => v.id === variantId)!;
+  const name = localize(product.name, locale);
+  const variantLabel = localize(variant.label, locale);
 
   function handleAdd() {
     addItem(
       {
         key: `${product.slug}-${variant.id}-${Date.now()}`,
         slug: product.slug,
-        name: `${product.name} — ${variant.label}`,
-        variantLabel: notes ? `${variant.label} (${notes.slice(0, 40)})` : variant.label,
+        name: `${name} — ${variantLabel}`,
+        variantLabel: notes ? `${variantLabel} (${notes.slice(0, 40)})` : variantLabel,
         priceEUR: variant.priceEUR,
         image: product.images[0],
         petPhotoName: petPhoto?.name,
@@ -40,7 +50,7 @@ export default function ProductDetail({ product }: { product: Product }) {
         href="/tienda"
         className="font-sans text-sm text-[var(--ink-soft)] hover:text-[var(--ink)]"
       >
-        ← Volver a la tienda
+        {t.back}
       </Link>
 
       <div className="mt-6 grid md:grid-cols-2 gap-12">
@@ -49,14 +59,14 @@ export default function ProductDetail({ product }: { product: Product }) {
           <div className="relative aspect-square rounded-xl overflow-hidden card mb-3">
             <Image
               src={mainImage}
-              alt={product.name}
+              alt={name}
               fill
               className="object-cover"
               unoptimized={mainImage.startsWith("http")}
             />
             {product.placeholder && (
               <span className="absolute top-3 left-3 bg-white/90 text-xs font-sans px-3 py-1 rounded-full text-[var(--ink-soft)]">
-                Imagen de ejemplo
+                {t.sampleImage}
               </span>
             )}
           </div>
@@ -85,16 +95,16 @@ export default function ProductDetail({ product }: { product: Product }) {
 
         {/* Info + form */}
         <div className="font-sans">
-          <h1 className="font-display text-3xl mb-1">{product.name}</h1>
-          <p className="text-[var(--ink-soft)] mb-4">{product.tagline}</p>
+          <h1 className="font-display text-3xl mb-1">{name}</h1>
+          <p className="text-[var(--ink-soft)] mb-4">{localize(product.tagline, locale)}</p>
           <p className="text-2xl mb-6">{variant.priceEUR}€</p>
           <p className="text-[var(--ink-soft)] leading-relaxed mb-8">
-            {product.description}
+            {localize(product.description, locale)}
           </p>
 
           <div className="mb-6">
             <label className="block text-sm mb-2 text-[var(--ink-soft)]">
-              Opción
+              {t.option}
             </label>
             <select
               value={variantId}
@@ -103,7 +113,7 @@ export default function ProductDetail({ product }: { product: Product }) {
             >
               {product.variants.map((v) => (
                 <option key={v.id} value={v.id}>
-                  {v.label} — {v.priceEUR}€
+                  {localize(v.label, locale)} — {v.priceEUR}€
                 </option>
               ))}
             </select>
@@ -112,8 +122,7 @@ export default function ProductDetail({ product }: { product: Product }) {
           {product.requiresPhoto && (
             <div className="mb-6">
               <label className="block text-sm mb-2 text-[var(--ink-soft)]">
-                Sube una foto de referencia (opcional ahora, te la pediremos
-                por email si prefieres)
+                {t.photoLabel}
               </label>
               <input
                 type="file"
@@ -123,11 +132,11 @@ export default function ProductDetail({ product }: { product: Product }) {
               />
               {petPhoto && (
                 <p className="text-xs text-[var(--ink-soft)] mt-1">
-                  Archivo: {petPhoto.name}
+                  {t.file}: {petPhoto.name}
                 </p>
               )}
               <textarea
-                placeholder="Cuéntanos algo sobre tu mascota o la escena que imaginas (opcional)"
+                placeholder={t.notesPlaceholder}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 rows={3}
@@ -137,7 +146,7 @@ export default function ProductDetail({ product }: { product: Product }) {
           )}
 
           <div className="flex items-center gap-4 mb-6">
-            <label className="text-sm text-[var(--ink-soft)]">Cantidad</label>
+            <label className="text-sm text-[var(--ink-soft)]">{t.quantity}</label>
             <div className="flex items-center border border-[var(--border)] rounded-full">
               <button
                 onClick={() => setQty((q) => Math.max(1, q - 1))}
@@ -153,13 +162,12 @@ export default function ProductDetail({ product }: { product: Product }) {
           </div>
 
           <button onClick={handleAdd} className="btn-primary w-full text-center">
-            {added ? "¡Añadido al carrito!" : "Añadir al carrito"}
+            {added ? t.added : t.addToCart}
           </button>
 
           {product.madeToOrder && product.leadTime && (
             <p className="text-xs text-[var(--ink-soft)] mt-4">
-              Pieza hecha a mano por encargo · Tiempo de elaboración:{" "}
-              {product.leadTime}
+              {t.madeToOrder} {localize(product.leadTime, locale)}
             </p>
           )}
         </div>
