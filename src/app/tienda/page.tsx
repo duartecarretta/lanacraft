@@ -1,10 +1,17 @@
 import Image from "next/image";
 import Link from "next/link";
-import { products } from "@/data/products";
+import { connection } from "next/server";
+import { getSiteData } from "@/lib/site-data";
 
-export const metadata = { title: "Tienda — lana & cactus" };
+export async function generateMetadata() {
+  await connection();
+  const data = await getSiteData();
+  return { title: `Tienda — ${data.siteName}` };
+}
 
-export default function ShopPage() {
+export default async function ShopPage() {
+  await connection();
+  const data = await getSiteData();
   return (
     <div className="mx-auto max-w-6xl px-6 py-16">
       <h1 className="font-display text-4xl mb-2">Tienda</h1>
@@ -12,7 +19,7 @@ export default function ShopPage() {
         Piezas hechas a mano, por encargo. Envíos a toda España.
       </p>
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
-        {products.map((p) => (
+        {data.products.map((p) => (
           <Link key={p.slug} href={`/tienda/${p.slug}`} className="group block">
             <div className="relative aspect-square rounded-xl overflow-hidden card mb-3">
               <Image
@@ -20,6 +27,7 @@ export default function ShopPage() {
                 alt={p.name}
                 fill
                 className="object-cover group-hover:scale-105 transition-transform duration-300"
+                unoptimized={p.images[0].startsWith("http")}
               />
             </div>
             <h3 className="font-display text-xl">{p.name}</h3>
