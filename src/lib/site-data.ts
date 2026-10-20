@@ -1,16 +1,17 @@
 import { put, list } from "@vercel/blob";
-import { products as seedProducts, type Product } from "@/data/products";
+import { products as seedProducts, type Product, type Variant } from "@/data/products";
+import { emptyLocalized, toLocalized, type Localized } from "@/lib/i18n";
 
 export type { Product, Variant } from "@/data/products";
 
 export type SiteData = {
   siteName: string;
-  tagline: string;
-  heroTitle: string;
-  heroSubtitle: string;
-  aboutTitle: string;
-  aboutText1: string;
-  aboutText2: string;
+  tagline: Localized;
+  heroTitle: Localized;
+  heroSubtitle: Localized;
+  aboutTitle: Localized;
+  aboutText1: Localized;
+  aboutText2: Localized;
   contactEmail: string;
   products: Product[];
 };
@@ -20,17 +21,109 @@ const DATA_KEY = "site-data.json";
 export function seedSiteData(): SiteData {
   return {
     siteName: "Atelier Sayuri",
-    tagline: "Arte textil hecho a mano",
-    heroTitle: "Arte textil para momentos que importan",
-    heroSubtitle:
-      "Retratos de mascotas, bordados y piezas de fieltro de aguja, creados uno a uno, pensando en ti y en quienes quieres.",
-    aboutTitle: "Un poco sobre mí",
-    aboutText1:
-      "Cada pieza nace del fieltro de aguja y el bordado, dos técnicas que me permiten crear con las manos algo único para cada persona que me escribe.",
-    aboutText2:
-      "Me encanta transformar una foto, una historia o un recuerdo en una obra textil que se pueda guardar para siempre. Trabajo despacio, con intención, cuidando cada detalle.",
+    tagline: {
+      es: "Arte textil hecho a mano",
+      en: "Handmade textile art",
+      pt: "Arte têxtil feita à mão",
+    },
+    heroTitle: {
+      es: "Arte textil para momentos que importan",
+      en: "Textile art for moments that matter",
+      pt: "Arte têxtil para momentos que importam",
+    },
+    heroSubtitle: {
+      es: "Retratos de mascotas, bordados y piezas de fieltro de aguja, creados uno a uno, pensando en ti y en quienes quieres.",
+      en: "Pet portraits, embroidery and needle-felted pieces, created one at a time, with you and your loved ones in mind.",
+      pt: "Retratos de animais de estimação, bordados e peças em feltro de agulha, criados um a um, pensando em você e em quem você ama.",
+    },
+    aboutTitle: {
+      es: "Un poco sobre mí",
+      en: "A little about me",
+      pt: "Um pouco sobre mim",
+    },
+    aboutText1: {
+      es: "Cada pieza nace del fieltro de aguja y el bordado, dos técnicas que me permiten crear con las manos algo único para cada persona que me escribe.",
+      en: "Every piece begins with needle felting and embroidery, two techniques that let me create something unique by hand for each person who writes to me.",
+      pt: "Cada peça nasce do feltro de agulha e do bordado, duas técnicas que me permitem criar à mão algo único para cada pessoa que me escreve.",
+    },
+    aboutText2: {
+      es: "Me encanta transformar una foto, una historia o un recuerdo en una obra textil que se pueda guardar para siempre. Trabajo despacio, con intención, cuidando cada detalle.",
+      en: "I love turning a photo, a story or a memory into a textile piece you can keep forever. I work slowly, with intention, taking care of every detail.",
+      pt: "Adoro transformar uma foto, uma história ou uma lembrança em uma obra têxtil para guardar para sempre. Trabalho devagar, com intenção, cuidando de cada detalhe.",
+    },
     contactEmail: "hola@ateliersayuri.com",
     products: seedProducts,
+  };
+}
+
+function normalizeVariant(stored: unknown, fallback?: Variant, index = 0): Variant {
+  const v = (stored && typeof stored === "object" ? stored : {}) as Partial<Variant>;
+  return {
+    id: typeof v.id === "string" && v.id ? v.id : fallback?.id ?? `opcion-${index}`,
+    label: toLocalized(v.label, fallback?.label ?? emptyLocalized()),
+    priceEUR: typeof v.priceEUR === "number" ? v.priceEUR : fallback?.priceEUR ?? 0,
+  };
+}
+
+function normalizeProduct(stored: unknown, fallback?: Product): Product {
+  const p = (stored && typeof stored === "object" ? stored : {}) as Partial<Product> & {
+    [key: string]: unknown;
+  };
+  const fallbackVariants = fallback?.variants ?? [];
+  const variants =
+    Array.isArray(p.variants) && p.variants.length > 0
+      ? p.variants.map((v, i) => normalizeVariant(v, fallbackVariants[i], i))
+      : fallbackVariants.length > 0
+      ? fallbackVariants
+      : [normalizeVariant(undefined, undefined, 0)];
+
+  return {
+    slug: typeof p.slug === "string" && p.slug ? p.slug : fallback?.slug ?? `producto-${Date.now()}`,
+    name: toLocalized(p.name, fallback?.name ?? emptyLocalized()),
+    tagline: toLocalized(p.tagline, fallback?.tagline ?? emptyLocalized()),
+    description: toLocalized(p.description, fallback?.description ?? emptyLocalized()),
+    basePriceEUR: typeof p.basePriceEUR === "number" ? p.basePriceEUR : fallback?.basePriceEUR ?? 0,
+    images:
+      Array.isArray(p.images) && p.images.length > 0
+        ? (p.images as string[])
+        : fallback?.images ?? ["/products/placeholder-pattern.svg"],
+    variants,
+    requiresPhoto:
+      typeof p.requiresPhoto === "boolean" ? p.requiresPhoto : fallback?.requiresPhoto ?? false,
+    madeToOrder:
+      typeof p.madeToOrder === "boolean" ? p.madeToOrder : fallback?.madeToOrder ?? true,
+    leadTime: p.leadTime
+      ? toLocalized(p.leadTime, fallback?.leadTime ?? emptyLocalized())
+      : fallback?.leadTime,
+    placeholder: typeof p.placeholder === "boolean" ? p.placeholder : fallback?.placeholder,
+  };
+}
+
+/**
+ * Merges whatever was saved in Blob storage (which may still be in the old,
+ * pre-i18n flat-string shape) on top of the seed data, normalizing every
+ * translatable field into a full { es, en, pt } object along the way.
+ */
+function normalizeSiteData(stored: Partial<SiteData> & { [key: string]: unknown }, seed: SiteData): SiteData {
+  const storedProducts = Array.isArray(stored.products) ? stored.products : [];
+  const products =
+    storedProducts.length > 0
+      ? storedProducts.map((sp, i) => normalizeProduct(sp, seed.products[i]))
+      : seed.products;
+
+  return {
+    siteName: typeof stored.siteName === "string" && stored.siteName ? stored.siteName : seed.siteName,
+    tagline: toLocalized(stored.tagline, seed.tagline),
+    heroTitle: toLocalized(stored.heroTitle, seed.heroTitle),
+    heroSubtitle: toLocalized(stored.heroSubtitle, seed.heroSubtitle),
+    aboutTitle: toLocalized(stored.aboutTitle, seed.aboutTitle),
+    aboutText1: toLocalized(stored.aboutText1, seed.aboutText1),
+    aboutText2: toLocalized(stored.aboutText2, seed.aboutText2),
+    contactEmail:
+      typeof stored.contactEmail === "string" && stored.contactEmail
+        ? stored.contactEmail
+        : seed.contactEmail,
+    products,
   };
 }
 
@@ -53,14 +146,7 @@ export async function getSiteData(): Promise<SiteData> {
     if (!res.ok) return seed;
 
     const stored = (await res.json()) as Partial<SiteData>;
-    return {
-      ...seed,
-      ...stored,
-      products:
-        Array.isArray(stored.products) && stored.products.length > 0
-          ? stored.products
-          : seed.products,
-    };
+    return normalizeSiteData(stored, seed);
   } catch (err) {
     console.error("getSiteData: falling back to seed data", err);
     return seed;
