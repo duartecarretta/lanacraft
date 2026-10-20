@@ -2,10 +2,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { connection } from "next/server";
 import { getSiteData } from "@/lib/site-data";
+import { getLocale } from "@/lib/get-locale";
+import { dictionaries, localize } from "@/lib/i18n";
 
 export default async function Home() {
   await connection();
-  const data = await getSiteData();
+  const [data, locale] = await Promise.all([getSiteData(), getLocale()]);
+  const t = dictionaries[locale];
   const heroImage = data.products[0]?.images[0] || "/products/cactus-5.jpg";
   const aboutImage = data.products[0]?.images[1] || data.products[0]?.images[0] || "/products/cactus-2.jpg";
 
@@ -15,27 +18,27 @@ export default async function Home() {
       <section className="mx-auto max-w-6xl px-6 pt-16 pb-20 grid md:grid-cols-2 gap-12 items-center">
         <div>
           <p className="font-sans text-sm tracking-widest uppercase text-[var(--accent)] mb-4">
-            Hecho a mano · España
+            {t.home.badge}
           </p>
           <h1 className="font-display text-4xl sm:text-5xl leading-tight mb-6">
-            {data.heroTitle}
+            {localize(data.heroTitle, locale)}
           </h1>
           <p className="font-sans text-[var(--ink-soft)] text-lg mb-8 max-w-md">
-            {data.heroSubtitle}
+            {localize(data.heroSubtitle, locale)}
           </p>
           <div className="flex gap-4 font-sans">
             <Link href="/tienda" className="btn-primary">
-              Ver la tienda
+              {t.home.ctaShop}
             </Link>
             <Link href="/#sobre-mi" className="btn-outline">
-              Conóceme
+              {t.home.ctaAbout}
             </Link>
           </div>
         </div>
         <div className="relative aspect-square rounded-2xl overflow-hidden card">
           <Image
             src={heroImage}
-            alt={data.products[0]?.name || "Pieza hecha a mano"}
+            alt={data.products[0] ? localize(data.products[0].name, locale) : "Pieza hecha a mano"}
             fill
             className="object-cover"
             priority
@@ -46,10 +49,9 @@ export default async function Home() {
 
       {/* Shop grid */}
       <section className="mx-auto max-w-6xl px-6 py-16">
-        <h2 className="font-display text-3xl mb-2">Descubre la colección</h2>
+        <h2 className="font-display text-3xl mb-2">{t.home.collectionTitle}</h2>
         <p className="font-sans text-[var(--ink-soft)] mb-10">
-          Cada pieza se hace a mano, por encargo, con todo el cuidado del
-          mundo.
+          {t.home.collectionSubtitle}
         </p>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {data.products.map((p) => (
@@ -61,15 +63,15 @@ export default async function Home() {
               <div className="relative aspect-square rounded-xl overflow-hidden card mb-3">
                 <Image
                   src={p.images[0]}
-                  alt={p.name}
+                  alt={localize(p.name, locale)}
                   fill
                   className="object-cover group-hover:scale-105 transition-transform duration-300"
                   unoptimized={p.images[0].startsWith("http")}
                 />
               </div>
-              <h3 className="font-display text-lg">{p.name}</h3>
+              <h3 className="font-display text-lg">{localize(p.name, locale)}</h3>
               <p className="font-sans text-sm text-[var(--ink-soft)]">
-                Desde {p.basePriceEUR}€
+                {t.home.from} {p.basePriceEUR}€
               </p>
             </Link>
           ))}
@@ -91,12 +93,12 @@ export default async function Home() {
           />
         </div>
         <div className="order-1 md:order-2">
-          <h2 className="font-display text-3xl mb-5">{data.aboutTitle}</h2>
+          <h2 className="font-display text-3xl mb-5">{localize(data.aboutTitle, locale)}</h2>
           <p className="font-sans text-[var(--ink-soft)] mb-4 leading-relaxed">
-            {data.aboutText1}
+            {localize(data.aboutText1, locale)}
           </p>
           <p className="font-sans text-[var(--ink-soft)] leading-relaxed">
-            {data.aboutText2}
+            {localize(data.aboutText2, locale)}
           </p>
         </div>
       </section>
@@ -104,23 +106,15 @@ export default async function Home() {
       {/* Testimonials */}
       <section className="mx-auto max-w-6xl px-6 py-16">
         <h2 className="font-display text-3xl mb-10 text-center">
-          Lo que dicen mis clientes
+          {t.home.testimonialsTitle}
         </h2>
         <div className="grid sm:grid-cols-2 gap-8 font-sans">
-          <div className="card rounded-xl p-8">
-            <p className="text-[var(--ink-soft)] italic mb-4">
-              “Llegó el paquete y nos quedamos sin palabras. ¡Quedó
-              precioso, se nota todo el cariño puesto en cada detalle!”
-            </p>
-            <p className="text-sm">— Carmen</p>
-          </div>
-          <div className="card rounded-xl p-8">
-            <p className="text-[var(--ink-soft)] italic mb-4">
-              “Superó todas mis expectativas. El empaquetado también fue
-              precioso. Gracias de corazón por tanta dedicación.”
-            </p>
-            <p className="text-sm">— Lucía</p>
-          </div>
+          {t.home.testimonials.map((item) => (
+            <div key={item.author} className="card rounded-xl p-8">
+              <p className="text-[var(--ink-soft)] italic mb-4">“{item.quote}”</p>
+              <p className="text-sm">— {item.author}</p>
+            </div>
+          ))}
         </div>
       </section>
     </div>
