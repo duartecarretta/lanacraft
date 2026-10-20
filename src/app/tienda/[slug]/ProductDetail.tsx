@@ -47,7 +47,13 @@ export default function ProductDetail({ product }: { product: Product }) {
         {/* Gallery */}
         <div>
           <div className="relative aspect-square rounded-xl overflow-hidden card mb-3">
-            <Image src={mainImage} alt={product.name} fill className="object-cover" />
+            <Image
+              src={mainImage}
+              alt={product.name}
+              fill
+              className="object-cover"
+              unoptimized={mainImage.startsWith("http")}
+            />
             {product.placeholder && (
               <span className="absolute top-3 left-3 bg-white/90 text-xs font-sans px-3 py-1 rounded-full text-[var(--ink-soft)]">
                 Imagen de ejemplo
@@ -64,7 +70,13 @@ export default function ProductDetail({ product }: { product: Product }) {
                     mainImage === img ? "border-[var(--accent)]" : "border-transparent"
                   }`}
                 >
-                  <Image src={img} alt="" fill className="object-cover" />
+                  <Image
+                    src={img}
+                    alt=""
+                    fill
+                    className="object-cover"
+                    unoptimized={img.startsWith("http")}
+                  />
                 </button>
               ))}
             </div>

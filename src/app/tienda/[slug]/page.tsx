@@ -1,18 +1,17 @@
 import { notFound } from "next/navigation";
-import { getProduct, products } from "@/data/products";
+import { connection } from "next/server";
+import { getSiteData } from "@/lib/site-data";
 import ProductDetail from "./ProductDetail";
-
-export function generateStaticParams() {
-  return products.map((p) => ({ slug: p.slug }));
-}
 
 export default async function ProductPage({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
+  await connection();
   const { slug } = await params;
-  const product = getProduct(slug);
+  const data = await getSiteData();
+  const product = data.products.find((p) => p.slug === slug);
   if (!product) return notFound();
   return <ProductDetail product={product} />;
 }
