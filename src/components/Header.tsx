@@ -3,14 +3,14 @@
 import Link from "next/link";
 import { useCart } from "@/lib/cart-context";
 
-export default function Header() {
+export default function Header({ siteName }: { siteName: string }) {
   const { count } = useCart();
 
   return (
     <header className="sticky top-0 z-40 bg-[var(--bg)]/90 backdrop-blur border-b border-[var(--border)]">
       <div className="mx-auto max-w-6xl px-6 py-4 flex items-center justify-between">
         <Link href="/" className="font-display text-2xl tracking-wide">
-          lana &amp; cactus
+          {siteName}
         </Link>
         <nav className="hidden sm:flex items-center gap-8 font-sans text-sm text-[var(--ink-soft)]">
           <Link href="/tienda" className="hover:text-[var(--ink)]">
