@@ -12,6 +12,20 @@ export default async function Home() {
   const heroImage = data.products[0]?.images[0] || "/products/cactus-5.jpg";
   const aboutImage = data.products[0]?.images[1] || data.products[0]?.images[0] || "/products/cactus-2.jpg";
 
+  if (data.homeBuilder?.enabled) {
+    const page = data.homeBuilder.pages[locale];
+    const fallbackPage = data.homeBuilder.pages.es;
+    const custom = page?.html ? page : fallbackPage;
+    if (custom?.html) {
+      return (
+        <div>
+          {custom.css && <style dangerouslySetInnerHTML={{ __html: custom.css }} />}
+          <div dangerouslySetInnerHTML={{ __html: custom.html }} />
+        </div>
+      );
+    }
+  }
+
   return (
     <div>
       {/* Hero */}
