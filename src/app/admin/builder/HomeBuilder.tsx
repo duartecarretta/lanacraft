@@ -10,14 +10,19 @@ import presetWebpage from "grapesjs-preset-webpage";
 import type { SiteData, HomeBuilderPage } from "@/lib/site-data";
 import { LOCALES, LANGUAGE_NAMES, dictionaries, localize, type Locale } from "@/lib/i18n";
 
-// Content saved by very early builds of this screen (before the "import
-// current layout" feature existed) that should be treated as blank, not as
-// real content someone authored.
-const LEGACY_PLACEHOLDER_HTML = "<p>Empieza arrastrando bloques aquí…</p>";
+// Text left over from very early builds of this screen (before the
+// "import current layout" feature existed), which should be treated as
+// blank rather than as real content someone authored.
+const LEGACY_PLACEHOLDER_TEXT = "Empieza arrastrando bloques aquí…";
 
 function isBlankPage(page: HomeBuilderPage | undefined): boolean {
-  const trimmed = (page?.html || "").trim();
-  return trimmed === "" || trimmed === LEGACY_PLACEHOLDER_HTML;
+  // getHtml() wraps content in its own <body>, adds whitespace, etc., so
+  // compare on text content only rather than exact markup.
+  const textOnly = (page?.html || "")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return textOnly === "" || textOnly === LEGACY_PLACEHOLDER_TEXT;
 }
 
 function escapeHtml(value: string): string {
