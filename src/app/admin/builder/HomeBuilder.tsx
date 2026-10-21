@@ -268,7 +268,9 @@ export default function HomeBuilder({ initialData }: { initialData: SiteData }) 
         {!ready && <span className="text-xs text-[var(--ink-soft)] ml-auto">Cargando editor…</span>}
       </div>
 
-      <div ref={containerRef} style={{ height: "calc(100vh - 150px)" }} />
+      <div style={{ height: "calc(100vh - 150px)" }}>
+        <div ref={containerRef} style={{ height: "100%" }} />
+      </div>
     </div>
   );
 }
