@@ -68,3 +68,42 @@ html, body {
   color: var(--ink-soft);
   line-height: 1.6;
 }
+
+/* Layout classes used by the builder's starter blocks and by the
+   auto-imported current homepage. GrapesJS strips inline style=""
+   attributes on parse, so all layout here is class-based. This block is
+   also duplicated (see BUILDER_SHARED_CSS in HomeBuilder.tsx) into every
+   saved page's own css, so it still applies once rendered outside the
+   editor — keep both copies in sync. */
+.ab-section { padding: 48px 24px; max-width: 1100px; margin: 0 auto; }
+.ab-section-lg { padding: 64px 24px; max-width: 1100px; margin: 0 auto; }
+.ab-two-col { display: flex; gap: 48px; align-items: center; flex-wrap: wrap; }
+.ab-two-col > div { flex: 1; min-width: 280px; }
+.ab-cta-row { display: flex; gap: 16px; flex-wrap: wrap; }
+.ab-badge { text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); font-size: 14px; margin-bottom: 16px; }
+.ab-hero-title { font-size: 44px; line-height: 1.15; margin-bottom: 24px; }
+.ab-hero-text { font-size: 18px; max-width: 420px; margin-bottom: 32px; }
+.ab-img-rounded { width: 100%; border-radius: 16px; display: block; }
+.ab-img-square { aspect-ratio: 1; object-fit: cover; }
+.ab-img-portrait { aspect-ratio: 4 / 5; object-fit: cover; }
+.ab-grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 32px; }
+.ab-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.ab-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
+.ab-product-card { display: block; text-decoration: none; color: inherit; }
+.ab-product-thumb { position: relative; aspect-ratio: 1; border-radius: 12px; overflow: hidden; margin-bottom: 12px; }
+.ab-product-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ab-product-name { font-size: 18px; margin: 0 0 4px 0; }
+.ab-product-price { font-size: 14px; color: var(--ink-soft); margin: 0; }
+.ab-testimonial { border-radius: 12px; padding: 32px; }
+.ab-testimonial-standalone { max-width: 480px; margin: 24px auto; }
+.ab-testimonial-quote { font-style: italic; margin: 0 0 16px 0; }
+.ab-testimonial-author { font-size: 14px; margin: 0; }
+.ab-cta-wrap { padding: 16px 24px; text-align: center; }
+.ab-spacer { height: 48px; }
+.ab-section-heading { margin-bottom: 8px; }
+.ab-section-intro { margin-bottom: 40px; }
+.ab-mb-sm { margin-bottom: 16px; }
+.ab-center { text-align: center; }
+@media (max-width: 760px) {
+  .ab-grid-2, .ab-grid-3, .ab-grid-4 { grid-template-columns: 1fr; }
+}
