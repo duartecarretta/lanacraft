@@ -1,8 +1,18 @@
 import { put, list } from "@vercel/blob";
 import { products as seedProducts, type Product, type Variant } from "@/data/products";
-import { emptyLocalized, toLocalized, type Localized } from "@/lib/i18n";
+import { emptyLocalized, toLocalized, LOCALES, type Locale, type Localized } from "@/lib/i18n";
 
 export type { Product, Variant } from "@/data/products";
+
+export type HomeBuilderPage = {
+  html: string;
+  css: string;
+};
+
+export type HomeBuilderData = {
+  enabled: boolean;
+  pages: Record<Locale, HomeBuilderPage>;
+};
 
 export type SiteData = {
   siteName: string;
@@ -14,7 +24,19 @@ export type SiteData = {
   aboutText2: Localized;
   contactEmail: string;
   products: Product[];
+  homeBuilder: HomeBuilderData;
 };
+
+function emptyHomeBuilderPage(): HomeBuilderPage {
+  return { html: "", css: "" };
+}
+
+function emptyHomeBuilder(): HomeBuilderData {
+  return {
+    enabled: false,
+    pages: { es: emptyHomeBuilderPage(), en: emptyHomeBuilderPage(), pt: emptyHomeBuilderPage() },
+  };
+}
 
 const DATA_KEY = "site-data.json";
 
@@ -53,6 +75,7 @@ export function seedSiteData(): SiteData {
     },
     contactEmail: "hola@ateliersayuri.com",
     products: seedProducts,
+    homeBuilder: emptyHomeBuilder(),
   };
 }
 
@@ -99,6 +122,24 @@ function normalizeProduct(stored: unknown, fallback?: Product): Product {
   };
 }
 
+function normalizeHomeBuilder(stored: unknown): HomeBuilderData {
+  const hb = (stored && typeof stored === "object" ? stored : {}) as Partial<HomeBuilderData> & {
+    [key: string]: unknown;
+  };
+  const storedPages = (hb.pages && typeof hb.pages === "object" ? hb.pages : {}) as Partial<
+    Record<Locale, Partial<HomeBuilderPage>>
+  >;
+  const pages = {} as Record<Locale, HomeBuilderPage>;
+  for (const locale of LOCALES) {
+    const p = storedPages[locale];
+    pages[locale] = {
+      html: typeof p?.html === "string" ? p.html : "",
+      css: typeof p?.css === "string" ? p.css : "",
+    };
+  }
+  return { enabled: typeof hb.enabled === "boolean" ? hb.enabled : false, pages };
+}
+
 /**
  * Merges whatever was saved in Blob storage (which may still be in the old,
  * pre-i18n flat-string shape) on top of the seed data, normalizing every
@@ -124,6 +165,7 @@ function normalizeSiteData(stored: Partial<SiteData> & { [key: string]: unknown 
         ? stored.contactEmail
         : seed.contactEmail,
     products,
+    homeBuilder: stored.homeBuilder ? normalizeHomeBuilder(stored.homeBuilder) : emptyHomeBuilder(),
   };
 }
 
