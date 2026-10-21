@@ -1,0 +1,70 @@
+/* Loaded inside the GrapesJS canvas iframe so blocks preview with the real
+   Atelier Sayuri branding (colors, fonts, buttons, cards) while Stephanie
+   builds the homepage. Keep this in sync with src/app/globals.css. */
+
+:root {
+  --bg: #faf6ef;
+  --bg-card: #f3ece2;
+  --ink: #3f3426;
+  --ink-soft: #6b5d47;
+  --accent: #a9694a;
+  --accent-soft: #c9a876;
+  --border: #e3d8c4;
+}
+
+html, body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: ui-serif, Georgia, "Times New Roman", serif;
+}
+
+.font-display {
+  font-family: ui-serif, Georgia, "Times New Roman", serif;
+}
+
+.font-sans {
+  font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+  padding: 0.75rem 1.75rem;
+  border-radius: 999px;
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+  display: inline-block;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-outline {
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  padding: 0.7rem 1.7rem;
+  border-radius: 999px;
+  font-size: 0.95rem;
+  display: inline-block;
+  text-decoration: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+}
+
+.section-title {
+  font-family: ui-serif, Georgia, "Times New Roman", serif;
+  font-size: 2rem;
+  margin: 0 0 0.75rem 0;
+}
+
+.section-text {
+  font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+  color: var(--ink-soft);
+  line-height: 1.6;
+}
