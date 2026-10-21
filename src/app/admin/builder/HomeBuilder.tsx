@@ -29,6 +29,47 @@ function escapeHtml(value: string): string {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
+// GrapesJS 0.23 strips style="" attributes on parse (avoidInlineStyle is a
+// deprecated no-op), so every block/section below is styled with these
+// classes instead of inline styles. This same CSS text is (a) saved inside
+// each page's `css` field — see captureCurrentLang — so it travels with the
+// content when rendered live via dangerouslySetInnerHTML, and (b) mirrored
+// into public/builder-canvas.css so it's also available while editing.
+const BUILDER_SHARED_CSS = `
+.ab-section { padding: 48px 24px; max-width: 1100px; margin: 0 auto; }
+.ab-section-lg { padding: 64px 24px; max-width: 1100px; margin: 0 auto; }
+.ab-two-col { display: flex; gap: 48px; align-items: center; flex-wrap: wrap; }
+.ab-two-col > div { flex: 1; min-width: 280px; }
+.ab-cta-row { display: flex; gap: 16px; flex-wrap: wrap; }
+.ab-badge { text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent); font-size: 14px; margin-bottom: 16px; }
+.ab-hero-title { font-size: 44px; line-height: 1.15; margin-bottom: 24px; }
+.ab-hero-text { font-size: 18px; max-width: 420px; margin-bottom: 32px; }
+.ab-img-rounded { width: 100%; border-radius: 16px; display: block; }
+.ab-img-square { aspect-ratio: 1; object-fit: cover; }
+.ab-img-portrait { aspect-ratio: 4 / 5; object-fit: cover; }
+.ab-grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 32px; }
+.ab-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.ab-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
+.ab-product-card { display: block; text-decoration: none; color: inherit; }
+.ab-product-thumb { position: relative; aspect-ratio: 1; border-radius: 12px; overflow: hidden; margin-bottom: 12px; }
+.ab-product-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ab-product-name { font-size: 18px; margin: 0 0 4px 0; }
+.ab-product-price { font-size: 14px; color: var(--ink-soft); margin: 0; }
+.ab-testimonial { border-radius: 12px; padding: 32px; }
+.ab-testimonial-standalone { max-width: 480px; margin: 24px auto; }
+.ab-testimonial-quote { font-style: italic; margin: 0 0 16px 0; }
+.ab-testimonial-author { font-size: 14px; margin: 0; }
+.ab-cta-wrap { padding: 16px 24px; text-align: center; }
+.ab-spacer { height: 48px; }
+.ab-section-heading { margin-bottom: 8px; }
+.ab-section-intro { margin-bottom: 40px; }
+.ab-mb-sm { margin-bottom: 16px; }
+.ab-center { text-align: center; }
+@media (max-width: 760px) {
+  .ab-grid-2, .ab-grid-3, .ab-grid-4 { grid-template-columns: 1fr; }
+}
+`.trim();
+
 // Rebuilds the current curated homepage (src/app/page.tsx) as static
 // HTML/CSS so Stephanie's canvas starts from what's already live, instead
 // of a blank page that would wipe the site the moment she enables it.
@@ -40,12 +81,12 @@ function buildCurrentHomeHtml(data: SiteData, locale: Locale): HomeBuilderPage {
   const productsHtml = data.products
     .map(
       (p) => `
-      <a href="/tienda/${p.slug}" style="display:block; text-decoration:none; color:inherit;">
-        <div class="card" style="position:relative; aspect-ratio:1; border-radius:12px; overflow:hidden; margin-bottom:12px;">
-          <img src="${p.images[0]}" style="width:100%; height:100%; object-fit:cover; display:block;" />
+      <a href="/tienda/${p.slug}" class="ab-product-card">
+        <div class="card ab-product-thumb">
+          <img src="${p.images[0]}" />
         </div>
-        <h3 class="font-display" style="font-size:18px; margin:0 0 4px 0;">${escapeHtml(localize(p.name, locale))}</h3>
-        <p class="font-sans" style="font-size:14px; color:var(--ink-soft); margin:0;">${escapeHtml(t.home.from)} ${p.basePriceEUR}€</p>
+        <h3 class="font-display ab-product-name">${escapeHtml(localize(p.name, locale))}</h3>
+        <p class="font-sans ab-product-price">${escapeHtml(t.home.from)} ${p.basePriceEUR}€</p>
       </a>`
     )
     .join("");
@@ -53,53 +94,53 @@ function buildCurrentHomeHtml(data: SiteData, locale: Locale): HomeBuilderPage {
   const testimonialsHtml = t.home.testimonials
     .map(
       (item) => `
-      <div class="card" style="border-radius:12px; padding:32px;">
-        <p class="section-text" style="font-style:italic; margin:0 0 16px 0;">"${escapeHtml(item.quote)}"</p>
-        <p class="font-sans" style="font-size:14px; margin:0;">— ${escapeHtml(item.author)}</p>
+      <div class="card ab-testimonial">
+        <p class="section-text ab-testimonial-quote">"${escapeHtml(item.quote)}"</p>
+        <p class="font-sans ab-testimonial-author">— ${escapeHtml(item.author)}</p>
       </div>`
     )
     .join("");
 
   const html = `
-    <section style="padding:64px 24px; display:flex; gap:48px; align-items:center; flex-wrap:wrap; max-width:1100px; margin:0 auto;">
-      <div style="flex:1; min-width:280px;">
-        <p class="font-sans" style="text-transform:uppercase; letter-spacing:0.1em; color:var(--accent); font-size:14px; margin-bottom:16px;">${escapeHtml(t.home.badge)}</p>
-        <h1 class="font-display section-title" style="font-size:44px; line-height:1.15; margin-bottom:24px;">${escapeHtml(localize(data.heroTitle, locale))}</h1>
-        <p class="section-text" style="font-size:18px; max-width:420px; margin-bottom:32px;">${escapeHtml(localize(data.heroSubtitle, locale))}</p>
-        <div style="display:flex; gap:16px;">
+    <section class="ab-section-lg ab-two-col">
+      <div>
+        <p class="font-sans ab-badge">${escapeHtml(t.home.badge)}</p>
+        <h1 class="font-display section-title ab-hero-title">${escapeHtml(localize(data.heroTitle, locale))}</h1>
+        <p class="section-text ab-hero-text">${escapeHtml(localize(data.heroSubtitle, locale))}</p>
+        <div class="ab-cta-row">
           <a href="/tienda" class="btn-primary">${escapeHtml(t.home.ctaShop)}</a>
           <a href="/#sobre-mi" class="btn-outline">${escapeHtml(t.home.ctaAbout)}</a>
         </div>
       </div>
-      <div style="flex:1; min-width:280px;">
-        <img src="${heroImage}" style="width:100%; border-radius:16px; display:block; aspect-ratio:1; object-fit:cover;" />
+      <div>
+        <img src="${heroImage}" class="ab-img-rounded ab-img-square" />
       </div>
     </section>
 
-    <section style="padding:48px 24px; max-width:1100px; margin:0 auto;">
-      <h2 class="font-display section-title" style="margin-bottom:8px;">${escapeHtml(t.home.collectionTitle)}</h2>
-      <p class="section-text" style="margin-bottom:40px;">${escapeHtml(t.home.collectionSubtitle)}</p>
-      <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:24px;">${productsHtml}</div>
+    <section class="ab-section">
+      <h2 class="font-display section-title ab-section-heading">${escapeHtml(t.home.collectionTitle)}</h2>
+      <p class="section-text ab-section-intro">${escapeHtml(t.home.collectionSubtitle)}</p>
+      <div class="ab-grid-4">${productsHtml}</div>
     </section>
 
-    <section id="sobre-mi" style="padding:48px 24px; display:flex; gap:48px; align-items:center; flex-wrap:wrap; max-width:1100px; margin:0 auto;">
-      <div style="flex:1; min-width:280px;">
-        <img src="${aboutImage}" style="width:100%; border-radius:16px; display:block; aspect-ratio:4/5; object-fit:cover;" />
+    <section id="sobre-mi" class="ab-section ab-two-col">
+      <div>
+        <img src="${aboutImage}" class="ab-img-rounded ab-img-portrait" />
       </div>
-      <div style="flex:1; min-width:280px;">
+      <div>
         <h2 class="font-display section-title">${escapeHtml(localize(data.aboutTitle, locale))}</h2>
-        <p class="section-text" style="margin-bottom:16px;">${escapeHtml(localize(data.aboutText1, locale))}</p>
+        <p class="section-text ab-mb-sm">${escapeHtml(localize(data.aboutText1, locale))}</p>
         <p class="section-text">${escapeHtml(localize(data.aboutText2, locale))}</p>
       </div>
     </section>
 
-    <section style="padding:48px 24px 80px; max-width:1100px; margin:0 auto;">
-      <h2 class="font-display section-title" style="text-align:center; margin-bottom:40px;">${escapeHtml(t.home.testimonialsTitle)}</h2>
-      <div style="display:grid; grid-template-columns:repeat(2,1fr); gap:32px;">${testimonialsHtml}</div>
+    <section class="ab-section">
+      <h2 class="font-display section-title ab-center ab-section-intro">${escapeHtml(t.home.testimonialsTitle)}</h2>
+      <div class="ab-grid-2">${testimonialsHtml}</div>
     </section>
   `;
 
-  return { html, css: "" };
+  return { html, css: BUILDER_SHARED_CSS };
 }
 
 const STARTER_BLOCKS: { id: string; label: string; category: string; content: string }[] = [
@@ -107,15 +148,15 @@ const STARTER_BLOCKS: { id: string; label: string; category: string; content: st
     id: "hero-section",
     label: "Destaque (Hero)",
     category: "Atelier Sayuri",
-    content: `<section style="padding:64px 24px; display:flex; gap:48px; align-items:center; flex-wrap:wrap; max-width:1100px; margin:0 auto;">
-      <div style="flex:1; min-width:280px;">
-        <p class="font-sans" style="text-transform:uppercase; letter-spacing:0.1em; color:var(--accent); font-size:14px; margin-bottom:16px;">Hecho a mano · España</p>
-        <h1 class="font-display section-title" style="font-size:44px; line-height:1.15; margin-bottom:24px;">Título principal</h1>
-        <p class="section-text" style="font-size:18px; max-width:420px; margin-bottom:32px;">Escribe aquí una descripción breve y atractiva.</p>
+    content: `<section class="ab-section-lg ab-two-col">
+      <div>
+        <p class="font-sans ab-badge">Hecho a mano · España</p>
+        <h1 class="font-display section-title ab-hero-title">Título principal</h1>
+        <p class="section-text ab-hero-text">Escribe aquí una descripción breve y atractiva.</p>
         <a href="/tienda" class="btn-primary">Ver la tienda</a>
       </div>
-      <div style="flex:1; min-width:280px;">
-        <img src="/products/cactus-3.jpg" style="width:100%; border-radius:16px; display:block;" />
+      <div>
+        <img src="/products/cactus-3.jpg" class="ab-img-rounded" />
       </div>
     </section>`,
   },
@@ -123,7 +164,7 @@ const STARTER_BLOCKS: { id: string; label: string; category: string; content: st
     id: "text-section",
     label: "Sección de texto",
     category: "Atelier Sayuri",
-    content: `<section style="padding:48px 24px; max-width:900px; margin:0 auto;">
+    content: `<section class="ab-section">
       <h2 class="font-display section-title">Título de la sección</h2>
       <p class="section-text">Escribe aquí el texto de esta sección. Puedes hablar de tu historia, tus materiales o lo que hace especial a cada pieza.</p>
     </section>`,
@@ -132,32 +173,32 @@ const STARTER_BLOCKS: { id: string; label: string; category: string; content: st
     id: "image-gallery",
     label: "Galería (3 imágenes)",
     category: "Atelier Sayuri",
-    content: `<section style="padding:48px 24px; display:grid; grid-template-columns:repeat(3,1fr); gap:24px; max-width:1100px; margin:0 auto;">
-      <img src="/products/cactus-1.jpg" style="width:100%; border-radius:12px; aspect-ratio:1; object-fit:cover; display:block;" />
-      <img src="/products/cactus-2.jpg" style="width:100%; border-radius:12px; aspect-ratio:1; object-fit:cover; display:block;" />
-      <img src="/products/cactus-6.jpg" style="width:100%; border-radius:12px; aspect-ratio:1; object-fit:cover; display:block;" />
+    content: `<section class="ab-section ab-grid-3">
+      <img src="/products/cactus-1.jpg" class="ab-img-rounded ab-img-square" />
+      <img src="/products/cactus-2.jpg" class="ab-img-rounded ab-img-square" />
+      <img src="/products/cactus-6.jpg" class="ab-img-rounded ab-img-square" />
     </section>`,
   },
   {
     id: "testimonial-card",
     label: "Tarjeta de opinión",
     category: "Atelier Sayuri",
-    content: `<div class="card" style="border-radius:16px; padding:32px; max-width:480px; margin:24px auto;">
-      <p class="section-text" style="font-style:italic; margin-bottom:16px;">"Escribe aquí la opinión de tu clienta..."</p>
-      <p class="font-sans" style="font-size:14px;">— Nombre</p>
+    content: `<div class="card ab-testimonial ab-testimonial-standalone">
+      <p class="section-text ab-testimonial-quote">"Escribe aquí la opinión de tu clienta..."</p>
+      <p class="font-sans ab-testimonial-author">— Nombre</p>
     </div>`,
   },
   {
     id: "cta-button",
     label: "Botón",
     category: "Atelier Sayuri",
-    content: `<div style="padding:16px 24px; text-align:center;"><a href="/tienda" class="btn-primary">Texto del botón</a></div>`,
+    content: `<div class="ab-cta-wrap"><a href="/tienda" class="btn-primary">Texto del botón</a></div>`,
   },
   {
     id: "spacer",
     label: "Espaciador",
     category: "Atelier Sayuri",
-    content: `<div style="height:48px;"></div>`,
+    content: `<div class="ab-spacer"></div>`,
   },
 ];
 
@@ -187,11 +228,6 @@ export default function HomeBuilder({ initialData }: { initialData: SiteData }) 
       width: "auto",
       storageManager: false,
       fromElement: false,
-      // GrapesJS 0.23 defaults to stripping inline style="" attributes and
-      // expects edits to go through classes/the Style Manager instead. Our
-      // starter blocks and the imported current-site layout rely on plain
-      // inline styles, so keep them literal.
-      avoidInlineStyle: false,
       plugins: [blocksBasic, presetWebpage],
       pluginsOpts: {
         [blocksBasic as unknown as string]: {
@@ -263,9 +299,13 @@ export default function HomeBuilder({ initialData }: { initialData: SiteData }) 
   function captureCurrentLang() {
     const editor = editorRef.current;
     if (!editor) return;
+    // Always prefix the shared layout CSS so content built from our blocks
+    // (or the imported current layout) keeps working once rendered outside
+    // the editor, where /builder-canvas.css isn't loaded.
+    const generatedCss = editor.getCss() || "";
     pagesRef.current[editLangRef.current] = {
       html: editor.getHtml(),
-      css: editor.getCss() || "",
+      css: `${BUILDER_SHARED_CSS}\n\n${generatedCss}`,
     };
   }
 
