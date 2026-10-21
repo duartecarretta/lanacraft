@@ -205,9 +205,14 @@ export default function AdminEditor({ initialData }: { initialData: SiteData }) 
             cambios&quot; para publicarlos.
           </p>
         </div>
-        <button onClick={handleLogout} className="btn-outline text-sm whitespace-nowrap">
-          Cerrar sesión
-        </button>
+        <div className="flex items-center gap-2">
+          <a href="/admin/builder" className="btn-primary text-sm whitespace-nowrap">
+            Construtor visual ✨
+          </a>
+          <button onClick={handleLogout} className="btn-outline text-sm whitespace-nowrap">
+            Cerrar sesión
+          </button>
+        </div>
       </div>
 
       {status && (
