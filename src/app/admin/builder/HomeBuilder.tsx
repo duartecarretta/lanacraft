@@ -187,6 +187,11 @@ export default function HomeBuilder({ initialData }: { initialData: SiteData }) 
       width: "auto",
       storageManager: false,
       fromElement: false,
+      // GrapesJS 0.23 defaults to stripping inline style="" attributes and
+      // expects edits to go through classes/the Style Manager instead. Our
+      // starter blocks and the imported current-site layout rely on plain
+      // inline styles, so keep them literal.
+      avoidInlineStyle: false,
       plugins: [blocksBasic, presetWebpage],
       pluginsOpts: {
         [blocksBasic as unknown as string]: {
